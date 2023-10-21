@@ -1,3 +1,18 @@
+#timer-container {
+    background-color: #f7d794;
+    padding: 10px;
+    border-radius: 10px;
+    margin-top: 20px;
+    text-align: center;
+}
+
+#timer {
+    font-size: 24px;
+    color: #2d3436;
+}
+
+
+
 .game-card {
     width: 3.5em;
     height: 3.5em;

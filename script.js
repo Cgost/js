@@ -1,46 +1,29 @@
-const symbols = [
-    'img/a.png',
-    'img/b.png',
-    'img/c.png',
-    'img/d.png',
-    'img/e.png',
-    'img/f.png',
-    'img/g.png',
-    'img/h.png'
-];
+// 計時器設定
+let timerStarted = false; 
+let timerInterval; 
+let seconds = 0;
 
-let cards = symbols.concat(symbols);
-cards = shuffle(cards);
+function startTimer() {
+    timerInterval = setInterval(function() {
+        seconds++;
+        document.getElementById('timer').textContent = `遊玩時間: ${seconds} 秒`;
+    }, 1000);
+}
 
-const gameBoard = document.getElementById('gameBoard');
+function stopTimer() {
+    clearInterval(timerInterval);
+}
 
-/*
-cards.forEach(symbol => {
-    const card = document.createElement('div');
-    card.className = 'game-card';
-    card.dataset.symbol = symbol;
-    card.textContent = '';
-    card.addEventListener('click', flipCard);
-    gameBoard.appendChild(card);
-});
-*/
-
-cards.forEach(symbol => {
-    const card = document.createElement('div');
-    card.className = 'game-card';
-    card.dataset.symbol = symbol;
-    const imgElement = document.createElement('img');
-    imgElement.src = '';
-    card.appendChild(imgElement);
-    card.addEventListener('click', flipCard);
-    gameBoard.appendChild(card);
-});
-
+// 卡牌設定
 let flippedCards = [];
 let matchedCards = [];
 
 function flipCard() {
     if (flippedCards.length < 2 && !flippedCards.includes(this) && !this.classList.contains('matched')) {
+        if (!timerStarted) {
+            startTimer();
+            timerStarted = true;
+        }
         flippedCards.push(this);
         this.firstChild.src = `${this.dataset.symbol}`;
         this.classList.add('selected');
@@ -59,7 +42,9 @@ function checkMatch() {
         card2.classList.add('matched');
 
         if (matchedCards.length === cards.length) {
-            alert('遊戲結束！恭喜你！');
+            stopTimer();
+            alert(`遊戲結束！恭喜你！用時 ${seconds} 秒`);
+            timerStarted = false;
         }
     } else {
         card1.firstChild.src = card2.firstChild.src = '';
@@ -80,3 +65,31 @@ function shuffle(array) {
     }
     return array;
 }
+
+
+// Main
+const symbols = [
+    'img/earth.png',
+    'img/colck.png',
+    'img/bank.png',
+    'img/heart.png',
+    'img/home.png',
+    'img/rocket.png',
+    'img/start.png',
+    'img/coin.png'
+];
+
+let cards = symbols.concat(symbols);
+cards = shuffle(cards);
+const gameBoard = document.getElementById('gameBoard');
+
+cards.forEach(symbol => {
+    const card = document.createElement('div');
+    card.className = 'game-card';
+    card.dataset.symbol = symbol;
+    const imgElement = document.createElement('img');
+    imgElement.src = '';
+    card.appendChild(imgElement);
+    card.addEventListener('click', flipCard);
+    gameBoard.appendChild(card);
+});
