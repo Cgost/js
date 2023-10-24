@@ -22,6 +22,7 @@ games().then(function(gamePaths) {
 
 async function games() {
     return [
-        "翻牌記憶小遊戲"
+        "翻牌記憶小遊戲",
+        "打地鼠遊戲"
     ];
 }
