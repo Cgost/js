@@ -16,22 +16,29 @@ guessBu.onclick = function () {
     count.innerHTML = sum;
     var userGuess = parseInt(text.value);
 
-    if (userGuess > guessNumber) {
-        result.innerHTML = "猜大了！";
-        result.style.color = "red";
-        maxRange = userGuess;
-        resultDisplay.innerHTML = `${minRange}-${maxRange}`;
-    } else if (userGuess < guessNumber) {
-        result.innerHTML = "猜小了！";
-        result.style.color = "red";
-        minRange = userGuess;
-        resultDisplay.innerHTML = `${minRange}-${maxRange}`;
-    } else {
-        result.className = "c2";
-        result.innerHTML = "恭喜猜對了！";
-        result.style.color = "green";
-        resultDisplay.innerHTML = "恭喜猜對了！";
-    }
+        if (isNaN(userGuess) || userGuess < 1 || userGuess >100)  {
+            result.innerHTML = "請輸入1-100的數字";
+            result.style.color = "red";
+            resultDisplay.innerHTML = "輸入錯誤！"; 
+        }
+        else if (userGuess > guessNumber) {
+            result.innerHTML = "猜大了！";
+            result.style.color = "red";
+            maxRange = userGuess;
+            resultDisplay.innerHTML = `${minRange}-${maxRange}`;
+        } else if (userGuess < guessNumber) {
+            result.innerHTML = "猜小了！";
+            result.style.color = "red";
+            minRange = userGuess;
+            resultDisplay.innerHTML = `${minRange}-${maxRange}`;
+        } else {
+            result.className = "c2";
+            result.innerHTML = "恭喜猜對了！";
+            result.style.color = "green";
+            resultDisplay.innerHTML = "恭喜猜對了！";
+        }
+    
+
 }
 
 reBu.onclick = function () {
@@ -43,6 +50,4 @@ reBu.onclick = function () {
     result.innerHTML = "";
     resultDisplay.innerHTML = "";
     text.value = "";
-    // Reassign the result variable after clearing the resultDisplay
-    result = document.querySelector(".c1");
 }
