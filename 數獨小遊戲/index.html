@@ -1,74 +1,30 @@
 <!DOCTYPE html>
-<html lang="en" >
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>數獨遊戲</title>
-  <link rel="stylesheet" href="./style.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="style.css">
+    <title>Sudoku Game</title>
 </head>
 <body>
-<!-- partial:index.partial.html -->
-    <div style="font-size: 2.5rem">
-        <h1>數獨遊戲</h1>
-        <p>長按空白的格子可以開啟數字板</p>
+    <h3>數獨小遊戲</h3>
+
+    <div class="container">
+        <span id="timer">00:00</span>
+        <table id="sudokuTable"></table>
+        <button id="submitButton">Submit</button>
+        <button id="startButton">開始遊戲</button>
     </div>
-    <div class="game">
-        <div class="bgBoard">
-            <div class="topArea">
-                <div class="timeContainer">
-                    <div class="timeNumber">
-                        <span id="hour">00</span>
-                        <span>:</span>
-                    </div>
 
-                    <div class="timeNumber">
-                        <span id="minute">00</span>
-                        <span>:</span>
-                    </div>
-
-                    <div class="timeNumber">
-                        <span id="second">00</span>
-                    </div>
-                </div>
-
-                <div class="title">數&nbsp;&nbsp;&nbsp;獨</div>
-
-                <select id="level" class="button">
-                    <option value="45">初級</option>
-                    <option value="27">中級</option>
-                    <option value="9">高級</option>
-                </select>
-            </div>
-
-            <div id="sudokuArea" class="sudokuArea"></div>
-
-            <div id="selectNumArea" class="selectNumArea">
-                <table style="width:120px; height:160px;">
-                    <tbody>
-                        <tr>
-                            <td id="selectNum1" class="selectNum">1</td>
-                            <td id="selectNum2" class="selectNum">2</td>
-                            <td id="selectNum3" class="selectNum">3</td>
-                        </tr>
-                        <tr>
-                            <td id="selectNum4" class="selectNum">4</td>
-                            <td id="selectNum5" class="selectNum">5</td>
-                            <td id="selectNum6" class="selectNum">6</td>
-                        </tr>
-                        <tr>
-                            <td id="selectNum7" class="selectNum">7</td>
-                            <td id="selectNum8" class="selectNum">8</td>
-                            <td id="selectNum9" class="selectNum">9</td>
-                        </tr>
-                        <tr>
-                            <td id="selectNum0" class="selectNum" colspan="3">空</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+    <!-- 浮動視窗 -->
+    <div id="myModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <p id="modalText">遊戲結束，你贏了！</p>
+            <button id="playAgainButton" onclick="playAgain()">再玩一次</button>
         </div>
     </div>
-<!-- partial -->
-    <script src='jquery.min.js'></script>
-    <script  src="./script.js"></script>
+
+    <script src="script.js"></script>
 </body>
 </html>

@@ -1,427 +1,270 @@
-var stepNum = 0;	// 步数
+let win_flag = false;
+let diff = 0.2;
 
-var second = 0;
-var minute = 0;
-var hour = 0;
-var timer = null;	// 计时器
+let startTime = new Date();
+let endTime;
+let timerInterval;
 
-/**
- * 页面加载初始化
- */
-$(function(){
-	initSudokuArea();
-	setVisible();
-	levelChange();
-	bindClick();
+document.addEventListener("DOMContentLoaded", function() {
+    // startTimer();
+    // generateSudoku();
+    // document.getElementById("submitButton").addEventListener("click", function() {
+    //     if(win_flag){
+    //         openModal("遊戲結束，你贏了！\n用時 " + stopTimer());
+    //     }
+    // });
+    document.getElementById("startButton").addEventListener("click", function() {
+        startGame();
+    });
 });
 
-/**
- * 初始化数独区
- */
-function initSudokuArea(){
-	$("#sudokuArea").children().remove();
-	var table = "<table style='width: 100%;height: 100%;'><tbody>";
-	for(var i=0; i<9; i++){
-		table += "<tr>";
-		for(var j=0; j<9; j++){
-			table += "<td id='" + (i+1) + "_" + (j+1) + "' class='number' " +
-					"onclick=leftCellClick(this.id) ></td>";
-			
-			if(j == 2 || j == 5){
-				table += "<td style='width:3px; height:32px; background:#ffffff;'></td>";
-			}
-		}
-		table += "</tr>";
-		
-		if(i == 2 || i == 5){
-			table += "<tr style='width:40px; height:3px; background:#ffffff;'></tr>";
-		}
-	}
-	table += "</tbody></table>";
-	$("#sudokuArea").append(table);
-	
-	var created = createSudokuNumbers();
-	while(!created){
-		created = createSudokuNumbers();
-	}
+function generateSudoku() {
+    let sudokuTable = document.getElementById("sudokuTable");
+    let puzzle = generateEmptyPuzzle();
+    let userInput = generateEmptyPuzzle(); // 存儲使用者輸入的數字
+
+    // 開始填充數獨盤面
+    fillSudoku(puzzle);
+
+    // for(let i = 0; i < 9; i++){
+    //     for(let j = 0; j < 9; j++){
+    //         userInput[i][j] = puzzle[i][j];
+    //     }
+    // }
+
+    // 將生成的數獨盤面填入表格中
+    for (let i = 0; i < 9; i++) {
+        let row = sudokuTable.insertRow(i);
+        for (let j = 0; j < 9; j++) {
+            let cell = row.insertCell(j);
+            if (Math.random() < diff) { // 隨機將一半的格子設為空
+                puzzle[i][j] = 0;
+                let input = document.createElement("input");
+                input.type = "text"; // 使用 text 類型，以允許空白
+                input.maxLength = 1; // 限制輸入長度為 1
+                input.addEventListener("input", function() {
+                    // 確保使用者輸入的值為1到9的數字，或者保留為空
+                    if (this.value !== "" && (this.value < 1 || this.value > 9 || !Number.isInteger(Number(this.value)))) {
+                        this.value = "";
+                    }
+                    userInput[i][j] = this.value; // 更新使用者輸入的數字
+                    // 檢查當前輸入是否合法
+                    if (this.value !== "" && !isValidInput(puzzle, userInput, i, j, this.value)) {
+                        this.classList.add("error");
+                    } else {
+                        this.classList.remove("error");
+                    }
+                    // 檢查勝利條件
+                    if (checkWinCondition(puzzle, userInput)) {
+                        win_flag = true;
+                    }
+                });
+                cell.appendChild(input);
+            } else {
+                cell.textContent = puzzle[i][j];
+            }
+            setCellBackgroundColor(cell, i, j);
+        }
+    }
 }
 
-/**
- * 生成一份数独答案
- */
-function createSudokuNumbers(){
-	var created = true;
-	for(var i=1; i<=9; i++){
-		for(var j=1; j<=9; j++){
-			var sudokuNumber = createEnableNumber(i, j);
-			if(sudokuNumber == undefined){
-				// createSudokuNumbers();
-				created = false;
-				return created;
-			}else{
-				$("#"+ i + "_" + j)[0].innerText = sudokuNumber;
-			}
-		}
-	}
-	return created;
+function generateEmptyPuzzle() {
+    // 生成一個9x9的空數獨盤面
+    let puzzle = [];
+    for (let i = 0; i < 9; i++) {
+        puzzle[i] = [];
+        for (let j = 0; j < 9; j++) {
+            puzzle[i][j] = 0;
+        }
+    }
+    return puzzle;
 }
 
-/**
- * 生成可填入的数字
- */
-function createEnableNumber(x, y){
-	var num = "";
-	var numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9];
-	
-	// 横向去重
-	for(var i=1; i<=9; i++){
-		var text = $("#"+ x + "_" + i)[0].innerText;
-		if(i != y && text != ""){
-			for(var j=0; j<numbers.length; j++){
-				if(numbers[j] == text){
-					numbers.splice(j,1);
-					break;
-				}
-			}
-		}
-	}
-	
-	// 纵向去重
-	for(var i=1; i<=9; i++){
-		var text = $("#"+ i + "_" + y)[0].innerText;
-		if(i != x && text != ""){
-			for(var j=0; j<numbers.length; j++){
-				if(numbers[j] == text){
-					numbers.splice(j,1);
-					break;
-				}
-			}
-		}
-	}
-	
-	// 小九宫内去重
-	var m = 0;
-	var n = 0;
-	if(x == 1 || x == 2 || x == 3){
-		m = 3;
-	}
-	if(x == 4 || x == 5 || x == 6){
-		m = 6;
-	}
-	if(x == 7 || x == 8 || x == 9){
-		m = 9;
-	}
-	
-	if(y == 1 || y == 2 || y == 3){
-		n = 3;
-	}
-	if(y == 4 || y == 5 || y == 6){
-		n = 6;
-	}
-	if(y == 7 || y == 8 || y == 9){
-		n = 9;
-	}
-	
-	for(var i=m-2; i<=m; i++){
-		for(var j=n-2; j<=n; j++){
-			var text = $("#"+ i + "_" + j)[0].innerText;
-			if(i != x && j != y && text != ""){
-				for(var k=0; k<numbers.length; k++){
-					if(numbers[k] == text){
-						numbers.splice(k,1);
-						break;
-					}
-				}
-			}
-		}
-	}
-	
-	num = numbers[Math.ceil(Math.random() * numbers.length)-1];
-	return num;
+function generateRandomArray() {
+    // 生成包含 1 到 9 的數組
+    let baseArray = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+    // 洗牌算法，將陣列順序打亂
+    for (let i = baseArray.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [baseArray[i], baseArray[j]] = [baseArray[j], baseArray[i]];
+    }
+
+    return baseArray;
 }
 
-/**
- * 根据难度设置可见数字（随机）
- */
-function setVisible(){
-	var level = parseInt($("#level")[0].value);
-	var randoms = [];
-	while(randoms.length < level){
-		var isExists = false;
-		var random = parseInt(81 * (Math.random()))+1;	// 获取一个1–81范围的数
-		for(var i=0; i<randoms.length; i++){	// 判断当前随机数是否已经存在
-			if (random == randoms[i]) {
-				isExists = true;
-				break;
-			}
-		}
-		
-		if(!isExists){	// 如果不存在，则添加进去
-			randoms.push(random);
-		}
-	}
-	
-	for(var i=0; i<randoms.length; i++){	// 计算出id，并对该id相对于的数字赋与背景色不同的颜色让其显示出来
-		var x = (randoms[i]%9 == 0 ? parseInt(randoms[i]/9) : (parseInt(randoms[i]/9) + 1));
-		var y = (randoms[i]%9 == 0 ? 9 : randoms[i]%9);
-		var id = (x + "_" + y);
-		$("#" + id).css("color", "#66b8ff");
-		$("#" + id).addClass("displayed");
-	}
-	
-	for(var i=1; i<=9; i++){
-		for(var j=1; j<=9; j++){
-			var id = i + "_" + j;
-			if($("#" + id)[0].className.indexOf("displayed") == -1){
-				$("#" + id)[0].innerHTML = "";
-			}
-		}
-	}
+function fillSudoku(puzzle) {
+    numbers = generateRandomArray();
+    // 使用遞歸填充數獨盤面
+    for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+            if (puzzle[i][j] === 0) {
+                for (let index = 0; index < 9; index++) {
+                    if (isValid(puzzle, i, j, numbers[index])) {
+                        puzzle[i][j] = numbers[index];
+                        if (fillSudoku(puzzle)) {
+                            return true;
+                        }
+                        puzzle[i][j] = 0; // 回溯
+                    }
+                }
+                return false; // 當前位置無法填充
+            }
+        }
+    }
+    return true; // 整個盤面都填充完畢
 }
 
-/**
- * 难度选择改变事件
- */
-function levelChange(){
-	$("#level").on("change", function(){
-		// 重置步数
-		stepNum = 0;
-		
-		// 重置定时器
-		clearInterval(timer);
-		second = 0;
-		minute = 0;
-		hour = 0;
-		$("#second")[0].innerHTML = digitalProcessing(second);
-		$("#minute")[0].innerHTML = digitalProcessing(minute);
-		$("#hour")[0].innerHTML = digitalProcessing(hour);
-		
-		// 重新绘制数独区
-		initSudokuArea();
-		setVisible();
-		bindClick();
-	});
+function isValid(puzzle, row, col, num) {
+    // 檢查在特定位置填充數字是否符合數獨規則
+    for (let i = 0; i < 9; i++) {
+        if (puzzle[row][i] === num || puzzle[i][col] === num || puzzle[Math.floor(row / 3) * 3 + Math.floor(i / 3)][Math.floor(col / 3) * 3 + i % 3] === num) {
+            return false;
+        }
+    }
+    return true;
 }
 
-/**
- * 绑定点击事件
- */
-function bindClick(){
-	// 设置单击页面如何位置输入小键盘隐藏
-	$("body").on("click", function(){
-		$("#selectNumArea").css("display", "none");
-	});
-	
-	// 设置右键单击页面如何位置不显示浏览器默认菜单
-	$("body").bind("contextmenu", function(){
-		window.event.returnValue = false;
-		return false;
-	});
-	
-	// 给所有 .number的td 标签绑定右键单击事件
-	$(".number").bind("contextmenu", function(e){
-		var id = e.target.id;
-		rightCellClick(id)
-	});
-	
-	// 输入小键盘的点击事件
-	var selectNums = $(".selectNum");
-	for(var i=0; i<selectNums.length; i++){
-		selectNums[i].onclick = function(e){
-			var selectedId = $(".selected")[0].id;
-			var selectNum = e.target.innerHTML;
-			var selectNumId = e.target.id;
-			selectNumClick(selectedId, selectNum, selectNumId);
-		};
-	}
+function isValidInput(puzzle, userInput, row, col, value) {
+    // 檢查當前輸入是否合法，包括使用者已經輸入的數字
+    // 檢查行
+    for (let i = 0; i < 9; i++) {
+        if (i !== col && (puzzle[row][i] == value || userInput[row][i] == value)) {
+            return false;
+        }
+    }
+    // 檢查列
+    for (let i = 0; i < 9; i++) {
+        if (i !== row && (puzzle[i][col] == value || userInput[i][col] == value)) {
+            return false;
+        }
+    }
+    // 檢查3x3區域
+    let startRow = Math.floor(row / 3) * 3;
+    let startCol = Math.floor(col / 3) * 3;
+    for (let i = startRow; i < startRow + 3; i++) {
+        for (let j = startCol; j < startCol + 3; j++) {
+            if ((i !== row || j !== col) && (puzzle[i][j] == value || userInput[i][j] == value)) {
+                return false;
+            }
+        }
+    }
+    return true;
 }
 
-/**
- * 左单击事件
- */
-function leftCellClick(id){
-	$("#selectNumArea").css("display", "none");
-	setCSS(id);
+function checkWinCondition(puzzle, userInput) {
+    // 檢查是否符合結束條件
+    for (let i = 0; i < 9; i++) {
+        for (let j = 0; j < 9; j++) {
+            if (userInput[i][j] != 0) {
+                return isValidInput(puzzle, userInput, i, j, userInput[i][j]);
+            }
+        }
+    }
+    return false;
 }
 
-/**
- * 右单击事件
- */
-function rightCellClick(id){
-	if($("#" + id)[0].className.indexOf("displayed") == -1){
-		$("#selectNumArea").css("display", "block");
-	}else{
-		$("#selectNumArea").css("display", "none");
-	}
-	setCSS(id);
+function setCellBackgroundColor(cell, row, col) {
+    var color_table = [  //定義二維陣列
+        [1, 1, 1, 0, 0, 0, 1, 1, 1],
+        [1, 1, 1, 0, 0, 0, 1, 1, 1],
+        [1, 1, 1, 0, 0, 0, 1, 1, 1],
+        [0, 0, 0, 1, 1, 1, 0, 0, 0],
+        [0, 0, 0, 1, 1, 1, 0, 0, 0],
+        [0, 0, 0, 1, 1, 1, 0, 0, 0],
+        [1, 1, 1, 0, 0, 0, 1, 1, 1],
+        [1, 1, 1, 0, 0, 0, 1, 1, 1],
+        [1, 1, 1, 0, 0, 0, 1, 1, 1]
+    ];
+    if (color_table[row][col] === 1) {
+        cell.style.backgroundColor = "#f3f6fa";
+    } else {
+        cell.style.backgroundColor = "#cce5ff"; //"#99c2ff";
+    }
 }
 
-/**
- * 输入小键盘单击事件
- */
-function selectNumClick(id, selectNum, selectNumId){
-	stepNum++;
-	$("#" + id).css({"color":"black"});
-	if(selectNum != "空"){
-		$("#" + id)[0].innerHTML = selectNum;
-		$("#" + id).addClass("inputNum");
-	}else{
-		$("#" + id).removeClass("inputNum");
-		$("#" + id)[0].innerHTML = "";
-	}
-	setCSS(id);
-	
-	// 去除所有 same 样式
-	var numbers = $(".number");
-	for(var i=0; i<numbers.length; i++){
-		$("#" + numbers[i].id).removeClass("same");
-	}
-	
-	// 判断所有新录入的数字与相关行、列、小九宫中数字重复并闪烁提醒
-	var inputNums = $(".inputNum");
-	for(var i=0; i<inputNums.length; i++){
-		searchSameNum(inputNums[i].id);
-	}
-	
-	if(stepNum == 1){
-		timer = setInterval(function(){setTimer();},1000);
-	}
-	
-	// 判断是否填完且正确
-	var displayedNum = $(".displayed");
-	var sameNum = $(".same");
-	if((displayedNum.length + inputNums.length) == 81 && sameNum.length == 0){
-		clearInterval(timer);
-		$("#selectNumArea").css("display", "none");
-		alert("恭喜闯关闯关！（Congratulations on breaking through the customs!）");
-	}
+function openModal(message) {
+    let modal = document.getElementById("myModal");
+    let modalText = document.getElementById("modalText");
+    let playAgainButton = document.getElementById("playAgainButton");
+    modalText.textContent = message;
+    modal.style.display = "block";
+    playAgainButton.style.display = "block";
 }
 
-/**
- * 查重复数字
- */
-function searchSameNum(id){
-	var x = id.split("_")[0];	// 行
-	var y = id.split("_")[1];	// 列
-	var t = $("#" + id)[0].innerText;	// 值
-	
-	// 行查重
-	for(var i=1; i<=9; i++){
-		var text = $("#" + x + "_" + i)[0].innerText;
-		var className = $("#" + x + "_" + i)[0].className;
-		if(text == t && ((x + "_" + i) != id) && 
-			(className.indexOf("displayed") != -1 || className.indexOf("inputNum") != -1)){
-			$("#" + id).addClass("same");
-			$("#" + x + "_" + i).addClass("same");
-		}
-	}
-	
-	// 列查重
-	for(var i=1; i<=9; i++){
-		var text = $("#" + i + "_" + y)[0].innerText;
-		var className = $("#" + i + "_" + y)[0].className;
-		if(text == t && ((i + "_" + y) != id) && 
-			(className.indexOf("displayed") != -1 || className.indexOf("inputNum") != -1)){
-			$("#" + id).addClass("same");
-			$("#" + i + "_" + y).addClass("same");
-		}
-	}
-	
-	// 小九宫查重
-	var m = 0;
-	var n = 0;
-	if(x == 1 || x == 2 || x == 3){
-		m = 3;
-	}
-	if(x == 4 || x == 5 || x == 6){
-		m = 6;
-	}
-	if(x == 7 || x == 8 || x == 9){
-		m = 9;
-	}
-	
-	if(y == 1 || y == 2 || y == 3){
-		n = 3;
-	}
-	if(y == 4 || y == 5 || y == 6){
-		n = 6;
-	}
-	if(y == 7 || y == 8 || y == 9){
-		n = 9;
-	}
-	
-	for(var i=m-2; i<=m; i++){
-		for(var j=n-2; j<=n; j++){
-			var text = $("#"+ i + "_" + j)[0].innerText;
-			var className = $("#" + i + "_" + j)[0].className;
-			if(text == t && ((i + "_" + j) != id) && 
-				(className.indexOf("displayed") != -1 || className.indexOf("inputNum") != -1)){
-				$("#" + id).addClass("same");
-				$("#" + i + "_" + j).addClass("same");
-			}
-		}
-	}
+function closeModal() {
+    let modal = document.getElementById("myModal");
+    modal.style.display = "none";
 }
 
-/**
- * 设置样式
- */
-function setCSS(id){
-	// 棋盘样式
-	var numbers = $(".number");
-	for(var i=0; i<numbers.length; i++){
-		$("#" + numbers[i].id).css({"border":"3px solid blue"});
-		$("#" + numbers[i].id).removeClass("selected");
-	}
-	$("#" + id).css({"border":"3px solid #0f0"});
-	$("#" + id).addClass("selected");
-	
-	// 输入小键盘样式
-	var x = "0px";
-	var y = "0px";
-	x = ($("#" + id).offset().left - 40) + "px";	// 根据点击的单元格的位置设置输入小键盘显示的位置
-	y = ($("#" + id).offset().top - 100) + "px";
-	$("#selectNumArea").css({"left":x, "top":y});
-	
-	var selectNums = $(".selectNum");
-	for(var i=0; i<selectNums.length; i++){
-		$("#" + selectNums[i].id).css({"border":"3px solid #08f"});
-	}
+
+// timer
+function startTimer() {
+    timerInterval = setInterval(updateTimer, 1000);
 }
 
-/**
- * 计时器
- */
-function setTimer(){
-	if(second < 59){
-		second++;
-	}else{
-		second = 0;
-		if(minute < 59){
-			minute++;
-		}else{
-			minute = 0;
-			if(hour < 23){
-				hour++;
-			}else{
-				clearInterval(timer);
-			}
-		}
-	}
-	
-	$("#second")[0].innerHTML = digitalProcessing(second);
-	$("#minute")[0].innerHTML = digitalProcessing(minute);
-	$("#hour")[0].innerHTML = digitalProcessing(hour);
-};
+function updateTimer() {
+    let currentTime = new Date();
+    let elapsedTime = Math.floor((currentTime - startTime) / 1000); // 以秒為單位
+    let minutes = Math.floor(elapsedTime / 60);
+    let seconds = elapsedTime % 60;
+    document.getElementById("timer").textContent = padZero(minutes) + ":" + padZero(seconds);
+}
 
-/**
- * 数字处理
- * 小于10的数字前面加0
- */
-function digitalProcessing(number){
-	var num = parseInt(number);
-	if(num < 10){
-		num = "0" + num;
-	}
-	return num;
-};
+function padZero(number) {
+    return (number < 10) ? "0" + number : number;
+}
+
+function stopTimer() {
+    endTime = new Date();
+    clearInterval(timerInterval);
+    let elapsedTime = Math.floor((endTime - startTime) / 1000); // 以秒為單位
+    let minutes = Math.floor(elapsedTime / 60);
+    let seconds = elapsedTime % 60;
+    return padZero(minutes) + ":" + padZero(seconds);
+}
+
+
+//
+function startGame() {
+    // 重置計時器
+    resetTimer();
+
+    // 生成新的數獨盤面
+    generateSudoku();
+
+    // 隱藏開始遊戲按鈕
+    hideStartButton();
+
+    // 顯示提交按鈕
+    showSubmitButton();
+
+    startTimer();
+    document.getElementById("submitButton").addEventListener("click", function() {
+        if(win_flag){
+            openModal("遊戲結束，你贏了！ 用時 " + stopTimer());
+        }
+    });
+}
+
+function resetTimer() {
+    // 重置計時器相關變數
+    startTime = new Date();;
+    clearInterval(timerInterval);
+    document.getElementById("timer").textContent = "00:00";
+}
+
+function hideStartButton() {
+    // 隱藏開始遊戲按鈕
+    document.getElementById("startButton").style.display = "none";
+}
+
+function showSubmitButton() {
+    // 顯示提交按鈕
+    document.getElementById("submitButton").style.display = "block";
+}
+
+function playAgain() {
+    let url = "index.html";
+    location.assign(url)
+}
